@@ -1,0 +1,160 @@
+<html>
+<head>
+<meta charset="utf-8">
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+<!-- <script type="text/javascript" src="jquery-1.7.js"></script> -->
+<script type="text/javascript">
+
+var log = function(e){console.log(e);}
+
+$(function() {
+
+(function init() {
+	$('#btn').attr('disabled', false);
+	setAPILife();
+})();
+
+
+
+
+function setAPILife(num) {
+	if (isset(num)) {
+		
+		var count = parseInt($('#api_remaining_hits').text()) + parseInt(num);
+		$('#api_remaining_hits').text(count);
+	} else {
+		$.getJSON('https://api.twitter.com/1/account/rate_limit_status.json?callback=?', function(data) {
+			log(data);
+
+			$('#api_remaining_hits').text(parseInt(data.remaining_hits));
+			$('#api_hourly_limit').text(parseInt(data.hourly_limit));
+			$('#api_reset_time').text(Date(data.reset_time));
+
+			if (parseInt(data.remaining_hits) === 0) {
+				$('#btn').attr('disabled', true);
+				alert('YOUR LIFE IS ZERO.');
+			}
+		});
+	}
+}
+
+$('#btn').click(function() {
+	$(this).attr('disabled', true);
+	$('#counter, #result').text('');
+	var p1 = $('#p1').val();
+	var p2 = $('#p2').val();
+
+	var dfd1 = $.Deferred();
+	var p1List = getFollowers(p1, -1, [], dfd1);
+	var dfd2 = $.Deferred();
+	var p2List = getFollowers(p2, -1, [], dfd2);
+
+	$.when(dfd1, dfd2).done(function(a, b) {
+		var list = getDuplicatedData(a, b);
+		log(list);
+		$('#counter').text(list.length);  
+		$('#result').text(list.join());
+		$('#btn').attr('disabled', false);
+	});
+});
+
+
+function getFollowers(id, cursor, followers, pdfd) {
+	var list = [];
+	var dfd = $.Deferred();
+
+	var obj = doAjax(id, cursor, followers);
+
+	$.when(dfd).done(function() {
+		pdfd.resolve(list);
+	});
+
+	function doAjax(id, cursor, followers) {
+		return $.ajax({
+			url: 'http://api.twitter.com/1/followers/ids.json',
+			dataType: 'jsonp',
+			data: {
+				screen_name: id,
+				cursor: (cursor == -1) ? -1 : cursor,
+			}
+		}).then(
+			function(data, textStatus, jqXHR) {
+				log(data);
+				log(jqXHR);
+				list = list.concat(data.ids);
+				setAPILife(-1);
+				if (data.next_cursor != 0)
+					$.timeout(300).done(function() {
+						doAjax(id, data.next_cursor, followers);
+					});
+				else
+					dfd.resolve();
+			},
+			function(event, textStatus, statusArray) { //jQuery本体にonerrorを追加した場合に限る
+				log(event); log(textStatus); log(statusArray);
+				alert('MAYBE API LIMIT OVER !!\n  (150 requests/hour)');
+			}
+		);
+	}
+}
+
+
+
+$.timeout = function(time) {
+	return $.Deferred(function(dfd) {
+		setTimeout(dfd.resolve, time);
+	}).promise();
+}
+
+
+});
+
+function isset(data) {
+    return (typeof(data) != 'undefined');
+}
+
+
+Array.prototype.contains = function (element) {
+	for (var i = 0, n = this.length; i < n; i++) {
+		if (this[i] == element) {
+		return true;
+		}
+	}
+	return false;
+}
+
+
+function getDuplicatedData(a, b) {
+	if (a.length > b.length)
+		var p = b, s = a;
+	else
+		var p = a, s = b;
+
+	var list = p.filter(function(e) {
+		return s.contains(e);
+	});
+	return list;
+}
+
+</script>
+<style>
+#api_reset { margin-left: 50px;}
+</style>
+</head>
+<body>
+<header>
+<span id="api_counter">API: <span id="api_remaining_hits">-</span>/<span id="api_hourly_limit">-</span>
+</span>
+<span id="api_reset">RESET TIME: <span id="api_reset_time"></span></span>
+</header>
+
+<input id="p1" type="text" value="Starbucks_J" />
+&
+<input id="p2" type="text" value="Tullys_jp" />
+<input id="btn" type="button" value="重複したフォロワーを数える"/>
+<div>
+<p id="counter"></p>
+<textarea id="result"></textarea>
+<div>
+</body>
+</html>
