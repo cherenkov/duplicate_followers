@@ -1,9 +1,12 @@
 <html>
 <head>
 <meta charset="utf-8">
+<title>duplicate twitter followers</title>
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
 <!-- <script type="text/javascript" src="jquery-1.7.js"></script> -->
 <script type="text/javascript">
+
+
 
 var log = function(e){console.log(e);}
 
@@ -12,8 +15,8 @@ $(function() {
 (function init() {
 	$('#btn').attr('disabled', false);
 	setAPILife();
-})();
 
+})();
 
 
 
@@ -34,7 +37,7 @@ function setAPILife(num) {
 
 			$('#api_remaining_hits').text(parseInt(data.remaining_hits));
 			$('#api_hourly_limit').text(parseInt(data.hourly_limit));
-			$('#api_reset_time').text(Date(data.reset_time));
+			$('#api_reset_time').text(new Date(data.reset_time_in_seconds*1000).toString());
 
 			if (parseInt(data.remaining_hits) === 0) {
 				$('#btn').attr('disabled', true);
@@ -144,7 +147,10 @@ function getDuplicatedData(a, b) {
 
 </script>
 <style>
-#api_reset { margin-left: 50px;}
+#api_reset { margin-left: 50px; }
+
+.tw_widget { display: inline-block; }
+	
 </style>
 </head>
 <body>
@@ -154,14 +160,14 @@ function getDuplicatedData(a, b) {
 <span id="api_reset">RESET TIME: <span id="api_reset_time"></span></span>
 </header>
 
-<input id="p1" type="text" value="Starbucks_J" />
+<input id="p1" class="tw_screen_name" type="text" value="Starbucks_J" />
 &
-<input id="p2" type="text" value="Tullys_jp" />
+<input id="p2" class="tw_screen_name" type="text" value="Tullys_jp" />
 <input id="btn" type="button" value="重複したフォロワーを数える"/>
 <div>
 <p id="counter"></p>
 <textarea id="result"></textarea>
-<div>
+</div>
 <footer>
 <a href="https://github.com/cherenkov/duplicate_followers">cherenkov/duplicate_followers - GitHub</a>
 </footer>
