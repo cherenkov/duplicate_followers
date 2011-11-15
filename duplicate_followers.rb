@@ -1,4 +1,4 @@
-require 'rubygems' unless defined? ::Gem
+require 'rubygems'
 require 'sinatra'
 
 
